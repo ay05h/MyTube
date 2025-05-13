@@ -12,7 +12,7 @@ const options = {
 
 const generateAccessAndRefereshToken = async (userId) => {
   try {
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
     user.refreshToken = refreshToken;
@@ -29,14 +29,14 @@ const generateAccessAndRefereshToken = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   //console.log("req", req);
-  const { fullName, userName, password, email } = req.body;
+  const { fullName, username, password, email } = req.body;
   if (
-    [fullName, userName, email, password].some((field) => field?.trim() === "")
+    [fullName, username, email, password].some((field) => field?.trim() === "")
   ) {
     throw new ApiError(400, "All Field are required.");
   }
   const userExist = await User.findOne({
-    $or: [{ userName }, { email }],
+    $or: [{ username }, { email }],
   });
 
   if (userExist) {
@@ -44,10 +44,9 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   // here email validation and password validation are left
-
   const avatarLocalPath =
-    Array.isArray(res.files?.avatar) && res.files.avatar.length > 0
-      ? res.files.avatar[0].path
+    req.files && Array.isArray(req.files.avatar) && req.files.avatar.length > 0
+      ? req.files.avatar[0].path
       : undefined;
   let coverImageLocalPath;
   if (
@@ -59,7 +58,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar is required");
+    throw new ApiError(400, "Avatar is required, localPath");
   }
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
@@ -72,7 +71,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({
-    username: userName.toLowerCase(),
+    username: username.toLowerCase(),
     email,
     fullName,
     avatar: avatar.url,
@@ -94,13 +93,13 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { userName, password, email } = req.body;
+  const { username, password, email } = req.body;
 
-  if (!(email || userName)) {
+  if (!(email || username)) {
     throw new ApiError(400, "username or email is required !");
   }
 
-  const user = await User.findOne({ $or: [{ email }, { userName }] });
+  const user = await User.findOne({ $or: [{ email }, { username }] });
   if (!user) {
     throw new ApiError(401, "Invalid user crendentials !");
   }
