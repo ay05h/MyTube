@@ -5,6 +5,8 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "./../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { json } from "express";
+import { use } from "react";
 const options = {
   httpOnly: true,
   secure: true,
@@ -229,13 +231,13 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, req.user, "User fetched successfully"));
 });
 
-const changeAvatar = asyncHandler(async (req, res) => {
+const updateAvatar = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.file?.path;
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar is required");
   }
-  const avatar = uploadOnCloudinary(avatarLocalPath);
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
   if (!avatar.url) {
     throw new ApiError(500, "Error while uploading avatar");
   }
@@ -248,7 +250,74 @@ const changeAvatar = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
+
+  //delete the avatar from cloudinary
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar updated successfully"));
 });
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { username, email, fullName } = req.body;
+  if ([username, email, fullName].some((field) => field?.trim() === "")) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  const existingUser = await User.findOne({
+    _id: { $ne: req.user?._id },
+    $or: [{ username }, { email }],
+  });
+
+  if (existingUser) {
+    throw new ApiError(409, "Username or email already exist");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName,
+        email,
+        username,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
+});
+
+const updateCoverimage = asyncHandler(async (req, res) => {
+  const coverimageLocalPath = req.file?.path;
+
+  if (!coverimageLocalPath) {
+    throw new ApiError(400, "Cover image is required");
+  }
+
+  const coverimage = await uploadOnCloudinary(coverimageLocalPath);
+  if (!coverimage.url) {
+    throw new ApiError(500, "Error while uploading cover image");
+  }
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        coverImage: coverimage.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  //delete the coverimage  from cloudinary
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Cover image updated successfully"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -256,4 +325,6 @@ export {
   refreshAccessToken,
   changePassword,
   getCurrentUser,
+  updateAvatar,
+  updateAccountDetails,
 };
