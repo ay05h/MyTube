@@ -5,8 +5,6 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "./../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import { json } from "express";
-import { use } from "react";
 const options = {
   httpOnly: true,
   secure: true,
@@ -211,7 +209,7 @@ const changePassword = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(req.user?._id);
-  const isPasswordCoorect = await User.isPasswordCorrect(oldPassword);
+  const isPasswordCoorect = await user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordCoorect) {
     throw new ApiError(400, "Invalid old password");
@@ -232,6 +230,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const updateAvatar = asyncHandler(async (req, res) => {
+  console.log(req.file);
   const avatarLocalPath = req.file?.path;
 
   if (!avatarLocalPath) {
@@ -320,7 +319,6 @@ const updateCoverimage = asyncHandler(async (req, res) => {
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
-
   if (!username?.trim()) {
     throw new ApiError(400, "Username is missing");
   }
@@ -356,7 +354,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         },
         isSubscribed: {
           $cond: {
-            if: { $in: [req.user?.id, $subscribers.subscriber] },
+            if: { $in: [req.user?.id, "$subscribers.subscriber"] },
             then: true,
             else: false,
           },
@@ -393,7 +391,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
   const user = await User.aggregate([
     {
       $match: {
-        _id: mongoose.Types.ObjectId(req.user?._id),
+        _id: new mongoose.Types.ObjectId(req.user?._id),
       },
     },
     {
