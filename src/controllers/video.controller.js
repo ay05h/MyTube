@@ -63,4 +63,89 @@ const publishAVideo = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video published successfully."));
 });
 
-export { publishAVideo };
+const getVideoById = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId || videoId.trim() === "") {
+    throw new ApiError(400, "Video id is missing");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(400, "Invalid Video ID format");
+  }
+
+  const videoFile = await Video.findById(videoId).populate("owner", "username");
+
+  if (!videoFile) {
+    throw new ApiError(404, "Video don't exist");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, videoFile, "Video File feteched successfully"));
+});
+
+const updateVideoDetailsById = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  if (!videoId || videoId.trim() === "") {
+    throw new ApiError(400, "Video id is missing");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(400, "Invalid Video ID format");
+  }
+  const { title, description } = req.body;
+  if (!title?.trim() || !description?.trim()) {
+    throw new ApiError(400, "Title and description is required");
+  }
+
+  const updatedVideoFile = await Video.findOneAndUpdate(
+    { _id: videoId, owner: req.user._id },
+    { $set: { title, description } },
+    { new: true, runValidators: true }
+  );
+
+  if (!updatedVideoFile) {
+    throw new ApiError(
+      404,
+      "Video not found or you are not authorized to update this video"
+    );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatedVideoFile,
+        "Video details updated successfully"
+      )
+    );
+});
+
+const deleteVideoById = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId || videoId.trim() === "") {
+    throw new ApiError(400, "Video id is missing");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(400, "Invalid Video ID format");
+  }
+
+  const deletedVideoFile = await Video.findOneAndDelete({
+    _id: videoId,
+    owner: req.user?._id,
+  });
+
+  if (!deletedVideoFile) {
+    throw new ApiError(404, "Video don't exist or unauthorized");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Video File deleted successfully"));
+});
+
+export { publishAVideo, getVideoById, deleteVideoById };
