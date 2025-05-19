@@ -114,7 +114,7 @@ const updateVideoDetailsById = asyncHandler(async (req, res) => {
   if (!updatedVideoFile) {
     throw new ApiError(
       404,
-      "Video not found or you are not authorized to update this video"
+      "Video do not exist or unauthorized to update this video"
     );
   }
 
