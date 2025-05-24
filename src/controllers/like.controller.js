@@ -7,14 +7,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  if (!videoId || videoId.trim() === "") {
-    throw new ApiError(400, "Video id is missing");
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "video ID is missing or Invalid");
   }
-
-  if (!mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(400, "Invalid Video ID format");
-  }
-
   const existingLike = await Like.findOneAndDelete({
     video: videoId,
     likeBy: req.user?._id,
@@ -52,12 +47,8 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
 
-  if (!commentId || commentId.trim() === "") {
-    throw new ApiError(400, "Comment ID is missing");
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(commentId)) {
-    throw new ApiError(400, "Invalid Comment ID format");
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Comment ID is missing or Invalid");
   }
 
   const existingLike = await Like.findOneAndDelete({
@@ -99,12 +90,8 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 const toggleTweetLike = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
 
-  if (!tweetId || tweetId.trim() === "") {
-    throw new ApiError(400, "Tweet ID is missing");
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(tweetId)) {
-    throw new ApiError(400, "Invalid Tweet ID format");
+  if (!isValidObjectId(tweetId)) {
+    throw new ApiError(400, "Tweet ID is missing or Invalid");
   }
 
   const existingLike = await Like.findOneAndDelete({
