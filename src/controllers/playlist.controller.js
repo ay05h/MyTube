@@ -5,9 +5,6 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/video.model.js";
 
-const isValidObjectId = (id) =>
-  mongoose.Types.ObjectId.isValid(id) && id.trim() !== "";
-
 const createPlaylist = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
 
@@ -170,7 +167,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, playlist, "Playlist deleted successfully"));
+    .json(new ApiResponse(200, {}, "Playlist deleted successfully"));
 });
 
 const updatePlaylist = asyncHandler(async (req, res) => {
